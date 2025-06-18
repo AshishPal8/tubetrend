@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String?
+  phone     String?
+  password  String?
+  avatar    String?  @default("https://i.pinimg.com/736x/9c/1c/13/9c1c132695bcf3bea4ef4f353bb0b755.jpg")
+  isAdmin   Boolean  @default(false)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts    Blog[]    @relation("UserPosts")
+  likes    Like[]
+  comments Comment[]
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  slug String @unique
+
+  blogs Blog[] @relation("BlogCategories")
+
+  isDeleted Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Blog {
+  id              Int     @id @default(autoincrement())
+  title           String
+  slug            String  @unique
+  content         String
+  thumbnail       String?
+  metaDescription String
+
+  authorId Int
+  author   User @relation("UserPosts", fields: [authorId], references: [id])
+
+  categories Category[] @relation("BlogCategories")
+  tags       Tag[]      @relation("BlogTags")
+
+  likeCount  Int      @default(0)
+  isActive   Boolean  @default(true)
+  isTrending Boolean  @default(false)
+  featured   Boolean  @default(false)
+  views      Int      @default(0)
+  readTime   Int?
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  likes    Like[]
+  comments Comment[]
+}
+
+model Like {
+  id     Int @id @default(autoincrement())
+  userId Int
+  blogId Int
+
+  user User @relation(fields: [userId], references: [id])
+  blog Blog @relation(fields: [blogId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, blogId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  blogId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  blog Blog @relation(fields: [blogId], references: [id])
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  blogs Blog[] @relation("BlogTags")
+}
