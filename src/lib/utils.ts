@@ -20,3 +20,9 @@ export function calculateReadTime(content: string): number {
   const wordCount = plainText.trim().split(/\s+/).length;
   return Math.ceil(wordCount / wordsPerMin);
 }
+
+export function truncateTextByWords(text: string, wordLimit: number): string {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= wordLimit) return text;
+  return words.slice(0, wordLimit).join(" ") + "...";
+}
