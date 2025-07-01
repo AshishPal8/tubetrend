@@ -1,3 +1,5 @@
+import BlogComment from "@/components/blog/blog-comment";
+import LikeCommentShare from "@/components/blog/like-comment-share";
 import prisma from "@/lib/prismadb";
 import { Metadata } from "next";
 import Image from "next/image";
@@ -39,7 +41,7 @@ export async function generateMetadata({
       locale: "en_US",
       images: [
         {
-          url: blog.thumbnail,
+          url: blog.thumbnail || "",
           width: 1200,
           height: 630,
           alt: blog.title || "Daily Drift",
@@ -68,9 +70,16 @@ const BlogPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
 
   if (!blog) return {};
 
+  const commentCount = await prisma.comment.count({
+    where: { blogId: blog.id },
+  });
+
   return (
     <div className="max-w-4xl mx-auto mt-20 h-screen">
       <h1 className="text-5xl font-black">{blog.title}</h1>
+      <div>
+        <LikeCommentShare id={blog.id} commentCount={commentCount} />
+      </div>
       <div className="w-full flex justify-center mt-6">
         <Image
           src={`${blog.thumbnail}`}
@@ -84,6 +93,9 @@ const BlogPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
         className="prose max-w-none mt-5"
         dangerouslySetInnerHTML={{ __html: blog.content }}
       />
+      <div>
+        <BlogComment id={blog.id} />
+      </div>
     </div>
   );
 };

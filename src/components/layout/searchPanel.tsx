@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,16 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (showSearchPanel) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [showSearchPanel]);
 
   if (!showSearchPanel) return null;
 
@@ -33,7 +43,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
 
   return (
     <div
-      className="absolute inset-0 z-20 bg-black/40"
+      className="fixed mt-16 inset-0 z-20 bg-black/40"
       onClick={() => setShowSearchPanel(false)}
     >
       <div
