@@ -1,6 +1,5 @@
 "use client";
-import { IBlogs } from "@/types/blogs";
-import { BookMarked } from "lucide-react";
+import { IFeaturedBlogs } from "@/types/blogs";
 import Image from "next/image";
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -9,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { truncateTextByWords } from "@/lib/utils";
 
 interface FeaturedBlogs {
-  blogs: IBlogs[];
+  blogs: IFeaturedBlogs[];
 }
 const Hero: React.FC<FeaturedBlogs> = ({ blogs }) => {
   const [active, setActive] = useState(0);

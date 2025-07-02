@@ -24,3 +24,18 @@ export interface ITrendingBlog {
   readTime: number | null;
   slug: string;
 }
+
+export interface IFeaturedBlogs {
+  id: number;
+  createdAt: Date;
+  title: string;
+  thumbnail: string | null;
+  readTime: number | null;
+  slug: string;
+  content: string;
+  metaDescription: string;
+  categories: {
+    id: number;
+    name: string;
+  }[];
+}
