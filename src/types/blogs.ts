@@ -39,3 +39,12 @@ export interface IFeaturedBlogs {
     name: string;
   }[];
 }
+
+export interface IBlogCard {
+  id: number;
+  title: string;
+  slug: string;
+  thumbnail: string | null;
+  metaDescription: string;
+  readTime: number | null;
+}

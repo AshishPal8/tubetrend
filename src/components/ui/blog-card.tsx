@@ -1,21 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
-import { IBlogs } from "@/types/blogs";
+import { IBlogCard } from "@/types/blogs";
 import { Clock } from "lucide-react";
 
-export default function BlogCard({ blog }: { blog: IBlogs }) {
+export default function BlogCard({ blog }: { blog: IBlogCard }) {
   return (
     <Link href={`/p/${blog.slug}`} className="group block">
       <div className="bg-white rounded-3xl overflow-hidden shadow-xl transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl p-2">
         {/* Image section */}
         <div className="relative h-64 w-full rounded-3xl overflow-hidden">
-          <Image
-            src={`${blog.thumbnail}?tr=w-600,h-400`}
-            fill
-            alt={blog.title}
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            priority
-          />
+          {blog.thumbnail ? (
+            <Image
+              src={`${blog.thumbnail}?tr=w-600,h-400`}
+              fill
+              alt={blog.title}
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              priority
+            />
+          ) : (
+            <p>No image available</p>
+          )}
 
           {/* Top indicators */}
           <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
@@ -23,7 +27,7 @@ export default function BlogCard({ blog }: { blog: IBlogs }) {
             <div className="flex items-center gap-1 px-2 py-1 bg-black/40 backdrop-blur-sm rounded-full">
               <Clock className="w-3 h-3 text-white" />
               <span className="text-white text-xs font-medium">
-                {blog.readTime} min
+                {blog.readTime && 0} min
               </span>
             </div>
           </div>
