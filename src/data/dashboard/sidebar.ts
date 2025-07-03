@@ -17,6 +17,11 @@ export const routes = [
     href: "/dashboard/blogs",
   },
   {
+    label: "Stories",
+    icon: FileText,
+    href: "/dashboard/stories",
+  },
+  {
     label: "Settings",
     icon: Settings,
     href: "/dashboard/settings",
