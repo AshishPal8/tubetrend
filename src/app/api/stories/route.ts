@@ -1,5 +1,6 @@
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prismadb";
+import { generateSlug } from "@/lib/utils";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,8 +18,8 @@ export async function POST(req: NextRequest) {
       thumbnail,
       isPublic = true,
       authorId,
-      categoryIds = [],
-      tagNames = [],
+      categories: categoryIds = [],
+      tags: tagNames = [],
       storiesToCreate = [],
       storyIdsToConnect = [],
     } = body;
@@ -28,8 +29,11 @@ export async function POST(req: NextRequest) {
       create: { name },
     }));
 
+    const slug = generateSlug(title);
+
     const data = {
       title,
+      slug,
       thumbnail,
       isPublic,
       authorId: Number(authorId),

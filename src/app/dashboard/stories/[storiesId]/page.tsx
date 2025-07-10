@@ -38,30 +38,42 @@ const StoriesPage = async ({
     );
   }
 
-  const stories = await prisma.storySet?.findUnique({
+  const storySet = await prisma.storySet?.findUnique({
     where: {
       id: Number(storiesId),
     },
     include: {
       categories: true,
       tags: true,
+      stories: true,
     },
   });
 
-  if (!stories) {
-    return notFound();
-  }
+  if (!storySet) return notFound();
+
+  const initialData = {
+    title: storySet.title,
+    thumbnail: storySet.thumbnail ?? "",
+    isPublic: storySet.isPublic,
+    categories: storySet.categories.map((c) => c.id.toString()),
+    tags: storySet.tags.map((t) => t.name),
+
+    storiesToCreate: storySet.stories.map((s) => ({
+      id: s.id,
+      mediaUrl: s.mediaUrl,
+      type: s.type,
+      caption: s.caption ?? "",
+      duration: s.duration,
+    })),
+
+    storyIdsToConnect: storySet.stories.map((s) => s.id),
+  };
 
   return (
     <div className="flex-col">
       <div className="flex-1 space-y-4">
         <StoriesForm
-          initialData={{
-            ...stories,
-            thumbnail: stories.thumbnail || "",
-            categories: stories.categories.map((cat) => cat.id.toString()),
-            tags: stories.tags.map((tag) => tag.name),
-          }}
+          initialData={initialData}
           categories={categories}
           tags={tags}
           story={story}

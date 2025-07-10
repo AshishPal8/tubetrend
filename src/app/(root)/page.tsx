@@ -1,5 +1,6 @@
 import CategorySection from "@/components/home/CategorySection";
 import Hero from "@/components/home/hero";
+import StoriesSection from "@/components/home/StoriesSection";
 import Trending from "@/components/home/trending";
 import { getFeatureBlgs } from "@/lib/api/blogs/getFeaturedBlogs";
 
@@ -15,6 +16,9 @@ export default async function Home() {
       <div className="w-full flex flex-col md:flex-row gap-4 px-2 md:px-0">
         <Hero blogs={featuredBlogs} />
         <Trending />
+      </div>
+      <div>
+        <StoriesSection />
       </div>
       <div>
         <CategorySection slug="productivity" title="Productivity" />

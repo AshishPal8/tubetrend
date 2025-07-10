@@ -36,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 export const storyItemSchema = z.object({
+  id: z.number().optional(),
   mediaUrl: z.string().url(),
   type: z.enum(["IMAGE", "VIDEO", "TEXT"]),
   caption: z.string().optional(),
@@ -67,7 +68,6 @@ export const StoriesForm: React.FC<StoriesFormProps> = ({
   tags,
   story,
 }) => {
-  console.log("hello there initial data", initialData);
   const params = useParams();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -110,7 +110,7 @@ export const StoriesForm: React.FC<StoriesFormProps> = ({
       };
 
       if (initialData) {
-        await axios.put(`/api/stories/${params.blogId}`, payload);
+        await axios.put(`/api/stories/${params.storiesId}`, payload);
       } else {
         await axios.post(`/api/stories`, payload);
       }

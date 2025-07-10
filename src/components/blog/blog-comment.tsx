@@ -87,8 +87,8 @@ const BlogComment = ({ id }: { id: number }) => {
       )}
 
       {!session?.user.id && (
-        <p className="text-gray-500">
-          To add comment
+        <p className="text-gray-500 mb-5">
+          To add comment{" "}
           <span className="text-blue-500 font-medium">
             <Link href="/signin">Sign in</Link>
           </span>

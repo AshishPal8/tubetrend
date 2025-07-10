@@ -109,6 +109,7 @@ model Tag {
 model StorySet {
   id        Int     @id @default(autoincrement())
   title     String
+  slug      String  @unique
   thumbnail String
   isPublic  Boolean @default(true)
   authorId  Int

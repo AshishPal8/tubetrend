@@ -75,7 +75,7 @@ const BlogPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
   });
 
   return (
-    <div className="max-w-4xl mx-auto mt-20 h-screen">
+    <div className="max-w-4xl mx-auto mt-20 mb-10">
       <h1 className="text-5xl font-black">{blog.title}</h1>
       <div>
         <LikeCommentShare id={blog.id} commentCount={commentCount} />
@@ -93,7 +93,7 @@ const BlogPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
         className="prose max-w-none mt-5"
         dangerouslySetInnerHTML={{ __html: blog.content }}
       />
-      <div>
+      <div className="">
         <BlogComment id={blog.id} />
       </div>
     </div>
