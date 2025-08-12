@@ -2,7 +2,7 @@ import prisma from "@/lib/prismadb";
 
 export async function getTrendingBlogs() {
   return await prisma.blog.findMany({
-    where: { featured: true },
+    where: { isTrending: true, isActive: true, isDeleted: false },
     select: {
       id: true,
       title: true,

@@ -30,19 +30,34 @@ export async function POST(
     });
 
     if (existingLike) {
-      await prisma.like.delete({
-        where: {
-          userId_blogId: { userId, blogId },
-        },
-      });
+      await prisma.$transaction([
+        prisma.like.delete({
+          where: {
+            userId_blogId: { userId, blogId },
+          },
+        }),
+        prisma.blog.update({
+          where: { id: blogId },
+          data: {
+            likeCount: { decrement: 1 },
+          },
+        }),
+      ]);
+
       return NextResponse.json({ liked: false });
     } else {
-      await prisma.like.create({
-        data: {
-          userId,
-          blogId,
-        },
-      });
+      await prisma.$transaction([
+        prisma.like.create({
+          data: {
+            userId,
+            blogId,
+          },
+        }),
+        prisma.blog.update({
+          where: { id: blogId },
+          data: { likeCount: { increment: 1 } },
+        }),
+      ]);
 
       return NextResponse.json({ liked: true });
     }

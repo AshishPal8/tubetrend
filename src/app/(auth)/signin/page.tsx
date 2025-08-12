@@ -97,7 +97,7 @@ export default function SignInForm() {
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Welcome Back!</CardTitle>
             <CardDescription className="text-neutral-600">
-              Log in to access your personalized fitness foods.
+              Log in to access your personalized content.
             </CardDescription>
           </CardHeader>
           <CardContent>
