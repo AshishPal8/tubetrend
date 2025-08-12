@@ -19,6 +19,10 @@ const StoriesSection = async () => {
       },
     })) || [];
 
+  if (!storySet || storySet.length === 0) {
+    return <div></div>;
+  }
+
   return (
     <div>
       <Heading title="Recent Stories" />

@@ -72,9 +72,13 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData }) => {
       router.refresh();
       router.push(`/dashboard/categories`);
       toast.success(toastMessage);
-    } catch (error) {
-      toast.error("Something went wrong!");
-      console.error("Error submitting form:", error);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        "Error while creating error";
+      toast.error(message);
+      console.error("Error submitting form:", error.response);
     } finally {
       setLoading(false);
       setSubmitted(false);
