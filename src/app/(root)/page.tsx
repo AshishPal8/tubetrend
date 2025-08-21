@@ -1,8 +1,11 @@
 import CategorySection from "@/components/home/CategorySection";
 import Hero from "@/components/home/hero";
+import RecentSection from "@/components/home/recentSection";
 import StoriesSection from "@/components/home/StoriesSection";
 import Trending from "@/components/home/trending";
 import { getFeatureBlgs } from "@/lib/api/blogs/getFeaturedBlogs";
+
+export const revalidate = 900; // every 15 min
 
 export default async function Home() {
   const featuredBlogs = await getFeatureBlgs();
@@ -17,9 +20,8 @@ export default async function Home() {
         <Hero blogs={featuredBlogs} />
         <Trending />
       </div>
-      <div>
-        <StoriesSection />
-      </div>
+      <StoriesSection />
+      <RecentSection />
       <div>
         <CategorySection slug="productivity" title="Productivity" />
         <CategorySection slug="self-improvement" title="Self Improvement" />
