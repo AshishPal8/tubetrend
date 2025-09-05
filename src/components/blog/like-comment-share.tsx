@@ -10,35 +10,54 @@ import { useRouter } from "next/navigation";
 interface Props {
   id: number;
   commentCount: number;
+  initialLiked?: boolean;
+  initialLikeCount?: number;
 }
 
-const LikeCommentShare = ({ id, commentCount }: Props) => {
+const LikeCommentShare = ({
+  id,
+  commentCount,
+  initialLiked = false,
+  initialLikeCount = 0,
+}: Props) => {
   const { data: session } = useSession();
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [liked, setLiked] = useState<boolean>(initialLiked);
+  const [likeCount, setLikeCount] = useState<number>(initialLikeCount);
+
   const router = useRouter();
 
   useEffect(() => {
-    const fetchLiked = async () => {
-      const res = await axios.get(`/api/blogs/${id}/like`);
-      const data = await res.data;
-      setLiked(data.liked || false);
-      setLikeCount(data.likeCount || 0);
-    };
-
-    fetchLiked();
-  }, [id]);
+    setLiked(initialLiked);
+    setLikeCount(initialLikeCount);
+  }, [initialLiked, initialLikeCount]);
 
   const toggleLike = async () => {
-    if (!session?.user?.id) return toast.error("Login to like the blog");
+    if (!session?.user?.id) {
+      toast.error("Login to like the blog");
+      return;
+    }
+
+    const nextLiked = !liked;
+    const previousLiked = liked;
+    const previousCount = likeCount;
+
+    setLiked(nextLiked);
+    setLikeCount((c) => (nextLiked ? c + 1 : Math.max(0, c - 1)));
 
     try {
       const res = await axios.post(`/api/blogs/${id}/like`);
-      setLiked(res.data.liked);
-      setLikeCount((prev) => (res.data.liked ? prev + 1 : prev - 1));
+      if (
+        typeof res.data.liked === "boolean" &&
+        typeof res.data.likeCount === "number"
+      ) {
+        setLiked(res.data.liked);
+        setLikeCount(res.data.likeCount);
+      }
     } catch (err) {
-      console.log("something went wrong", err);
-      toast.error("Something went wrong");
+      setLiked(previousLiked);
+      setLikeCount(previousCount);
+      console.error("Like toggle failed", err);
+      toast.error("Could not update like. Try again.");
     }
   };
 
@@ -53,6 +72,7 @@ const LikeCommentShare = ({ id, commentCount }: Props) => {
         <button
           className="flex items-center gap-2 transition cursor-pointer"
           onClick={toggleLike}
+          aria-pressed={liked}
         >
           <Heart
             size={30}
@@ -60,6 +80,7 @@ const LikeCommentShare = ({ id, commentCount }: Props) => {
           />
           <span>{likeCount}</span>
         </button>
+
         <button
           className="flex items-center gap-2 transition cursor-pointer"
           onClick={handleComment}
@@ -67,7 +88,11 @@ const LikeCommentShare = ({ id, commentCount }: Props) => {
           <MessageCircle className="text-gray-500" size={30} />
           <span>{commentCount}</span>
         </button>
-        <button className="flex items-center gap-2 transition cursor-pointer">
+
+        <button
+          className="flex items-center gap-2 transition cursor-pointer"
+          aria-label="Share"
+        >
           <Share className="text-gray-500" size={30} />
         </button>
       </div>

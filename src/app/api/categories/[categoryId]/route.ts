@@ -50,7 +50,7 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ category: updatedCategory }, { status: 200 });
+    return NextResponse.json({ id: updatedCategory.id }, { status: 200 });
   } catch (error) {
     console.error("Error updating category:", error);
     return NextResponse.json(

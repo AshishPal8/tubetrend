@@ -104,7 +104,7 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updatedBlog, { status: 200 });
+    return NextResponse.json({ id: updatedBlog.id }, { status: 200 });
   } catch (error) {
     console.error("Error updating blog:", error);
     return NextResponse.json(
