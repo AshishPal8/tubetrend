@@ -37,83 +37,95 @@ export async function PUT(
 
     const slug = generateSlug(title);
 
-    await prisma.$transaction(
-      async (tx) => {
-        await tx.storySet.update({
-          where: { id: setId },
-          data: {
-            title,
-            slug,
-            thumbnail,
-            isPublic,
-            ...(authorId && { authorId: Number(authorId) }),
-            categories: { set: categoryIds.map((id: number) => ({ id })) },
+    const ops: any[] = [];
 
-            tags: {
-              // remove all then connect/create anew
-              set: tagNames.map((name: string) => ({ name })),
-              connectOrCreate: tagConnectOrCreate,
-            },
+    ops.push(
+      prisma.storySet.update({
+        where: { id: setId },
+        data: {
+          title,
+          slug,
+          thumbnail,
+          isPublic,
+          ...(authorId && { authorId: Number(authorId) }),
+          categories: {
+            set: (categoryIds || []).map((id: number) => ({ id })),
           },
-        });
-
-        const incomingExistingIds = storiesToCreate
-          .filter((s: any) => s.id)
-          .map((s: any) => s.id as number);
-
-        await tx.story.deleteMany({
-          where: {
-            storySetId: setId,
-            id: { notIn: [...incomingExistingIds, ...storyIdsToConnect] },
+          // clear existing tags and connectOrCreate new ones
+          tags: {
+            set: [], // remove all existing tag links
+            connectOrCreate: tagConnectOrCreate,
           },
-        });
-
-        for (const s of storiesToCreate) {
-          if (s.id) {
-            // update existing
-            await tx.story.update({
-              where: { id: s.id },
-              data: {
-                mediaUrl: s.mediaUrl,
-                type: s.type,
-                caption: s.caption,
-                duration: s.duration,
-              },
-            });
-          } else {
-            await tx.story.create({
-              data: {
-                storySetId: setId,
-                mediaUrl: s.mediaUrl,
-                type: s.type,
-                caption: s.caption,
-                duration: s.duration,
-              },
-            });
-          }
-        }
-        if (storyIdsToConnect.length) {
-          await tx.story.updateMany({
-            where: {
-              id: { in: storyIdsToConnect },
-              storySetId: { not: setId },
-            },
-            data: { storySetId: setId },
-          });
-        }
-      },
-      { timeout: 15000 }
+        },
+      })
     );
+
+    const incomingExistingIds = (storiesToCreate || [])
+      .filter((s: any) => s.id)
+      .map((s: any) => Number(s.id));
+
+    ops.push(
+      prisma.story.deleteMany({
+        where: {
+          storySetId: setId,
+          id: {
+            notIn: [...incomingExistingIds, ...(storyIdsToConnect || [])],
+          },
+        },
+      })
+    );
+
+    const updates = (storiesToCreate || []).filter((s: any) => s.id);
+    for (const s of updates) {
+      ops.push(
+        prisma.story.update({
+          where: { id: Number(s.id) },
+          data: {
+            mediaUrl: s.mediaUrl,
+            type: s.type,
+            caption: s.caption,
+            duration: s.duration,
+          },
+        })
+      );
+    }
+
+    const creates = (storiesToCreate || []).filter((s: any) => !s.id);
+    if (creates.length) {
+      ops.push(
+        prisma.story.createMany({
+          data: creates.map((s: any) => ({
+            storySetId: setId,
+            mediaUrl: s.mediaUrl,
+            type: s.type,
+            caption: s.caption,
+            duration: s.duration,
+          })),
+          skipDuplicates: true,
+        })
+      );
+    }
+
+    if ((storyIdsToConnect || []).length) {
+      ops.push(
+        prisma.story.updateMany({
+          where: {
+            id: { in: storyIdsToConnect.map((id: number) => Number(id)) },
+            storySetId: { not: setId },
+          },
+          data: { storySetId: setId },
+        })
+      );
+    }
+
+    await prisma.$transaction(ops);
 
     const refreshed = await prisma.storySet.findUnique({
       where: { id: setId },
-      select: {
-        id: true,
-        title: true,
-      },
+      select: { id: true, title: true },
     });
 
-    return NextResponse.json(refreshed, { status: 200 });
+    return NextResponse.json({ id: refreshed?.id }, { status: 200 });
   } catch (error) {
     console.error("Error updating story set:", error);
     return NextResponse.json(

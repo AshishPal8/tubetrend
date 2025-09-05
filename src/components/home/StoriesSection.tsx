@@ -1,8 +1,6 @@
 import prisma from "@/lib/prismadb";
 import React from "react";
-import { Heading } from "../ui/heading";
-import Image from "next/image";
-import Link from "next/link";
+import StoriesSlider from "./StoriesSlider";
 
 const StoriesSection = async () => {
   const storySet =
@@ -23,29 +21,7 @@ const StoriesSection = async () => {
     return <div></div>;
   }
 
-  return (
-    <div>
-      <Heading title="Recent Stories" />
-      <div className="">
-        {storySet.map((stories) => (
-          <div
-            key={stories.id}
-            className="border-4 border-blue-600 p-1 w-fit rounded-full"
-          >
-            <Link href={`/stories/${stories.slug}`}>
-              <Image
-                src={stories.thumbnail}
-                alt={stories.title}
-                width={300}
-                height={300}
-                className="w-32 h-32 rounded-full aspect-square object-cover"
-              />
-            </Link>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <StoriesSlider storySet={storySet} />;
 };
 
 export default StoriesSection;

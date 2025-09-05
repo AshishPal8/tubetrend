@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(blog, { status: 201 });
+    return NextResponse.json({ id: blog.id }, { status: 201 });
   } catch (error) {
     console.error("Error creating blog:", error);
     return NextResponse.json(

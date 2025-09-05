@@ -1,5 +1,6 @@
 "use client";
-import { StoryType } from "@/generated/prisma";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,8 +9,8 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import Image from "next/image";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+
+type StoryType = "IMAGE" | "VIDEO";
 
 interface Story {
   id: number;
@@ -42,196 +43,206 @@ const StoriesPlayer = ({
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [startTime, setStartTime] = useState(Date.now());
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const timeoutRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const touchStartRef = useRef<number>(0);
 
   const story = stories[current];
 
   const clearTimers = useCallback(() => {
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+      window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+      window.clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }, []);
 
-  const getStoryDuration = useCallback((story: Story) => {
-    if (story.type === "VIDEO" && videoRef.current?.duration) {
-      return videoRef.current.duration * 1000;
+  // compute duration in ms. For video, prefer actual video duration when available.
+  const getStoryDurationMs = useCallback((s: Story) => {
+    if (
+      s.type === "VIDEO" &&
+      videoRef.current?.duration &&
+      !isNaN(videoRef.current.duration)
+    ) {
+      return Math.max(100, Math.floor(videoRef.current.duration * 1000));
     }
-    return story.duration * 1000;
+    return Math.max(100, Math.floor((s.duration || 3) * 1000)); // fallback: provided duration in seconds or 3s
   }, []);
 
+  // Start timers for the current story. Uses a local `start` to avoid stale state races.
   const startStoryTimer = useCallback(() => {
+    clearTimers();
     if (!story || !isPlaying) return;
 
-    const duration = getStoryDuration(story);
-    const elapsed = Date.now() - startTime;
-    const remaining = Math.max(0, duration - elapsed);
-
-    setProgress((elapsed / duration) * 100);
-
-    if (remaining <= 0) {
-      // Story finished, move to next
-      if (current < stories.length - 1) {
-        setCurrent((prev) => prev + 1);
-      } else if (hasNextStorySet && onNextStorySet) {
-        onNextStorySet();
+    // For video: if duration not available yet, do not start timer here.
+    if (story.type === "VIDEO") {
+      const videoDuration = videoRef.current?.duration;
+      if (!videoDuration || isNaN(videoDuration)) {
+        // Wait for loadedmetadata to trigger start (handled in onLoadedMetadata below)
+        setProgress(0);
+        return;
       }
-      return;
     }
 
-    timeoutRef.current = setTimeout(() => {
+    const durationMs = getStoryDurationMs(story);
+    const start = Date.now();
+    setProgress(0);
+
+    // timeout for advancing the story after remaining ms
+    timeoutRef.current = window.setTimeout(() => {
+      clearTimers();
+      // move next
       if (current < stories.length - 1) {
-        setCurrent((prev) => prev + 1);
+        setCurrent((c) => c + 1);
       } else if (hasNextStorySet && onNextStorySet) {
         onNextStorySet();
       }
-    }, remaining);
+    }, durationMs);
 
-    // Update progress every 50ms
-    intervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progressPercent = Math.min((elapsed / duration) * 100, 100);
-      setProgress(progressPercent);
+    // interval to update progress
+    intervalRef.current = window.setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min(100, (elapsed / durationMs) * 100);
+      setProgress(pct);
     }, 50);
   }, [
     story,
     isPlaying,
-    startTime,
+    clearTimers,
     current,
     stories.length,
     hasNextStorySet,
     onNextStorySet,
-    getStoryDuration,
+    getStoryDurationMs,
   ]);
 
-  // Reset story
-  const resetStory = useCallback(() => {
-    setProgress(0);
-    setStartTime(Date.now());
+  // reset and start when story changes
+  useEffect(() => {
     clearTimers();
-  }, [clearTimers]);
+    setProgress(0);
 
-  // Navigate to next story
+    // If story is VIDEO and video element exists and is already loaded, start immediately
+    if (story?.type === "VIDEO") {
+      const v = videoRef.current;
+      if (v && v.duration && !isNaN(v.duration)) {
+        // small tick to allow UI update
+        setTimeout(() => startStoryTimer(), 50);
+      } else {
+        // wait for onLoadedMetadata to call startStoryTimer
+      }
+    } else {
+      // images (or video fallback), start timer
+      setTimeout(() => startStoryTimer(), 50);
+    }
+
+    return () => clearTimers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, story?.type, startStoryTimer]);
+
+  // Pause / resume handling for play state
+  useEffect(() => {
+    if (isPlaying) {
+      startStoryTimer();
+      if (story?.type === "VIDEO" && videoRef.current) {
+        // try to play the video
+        videoRef.current.muted = isMuted;
+        const p = videoRef.current.play();
+        if (p && p.catch) p.catch(() => {});
+      }
+    } else {
+      // pause timers and video
+      clearTimers();
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+        } catch {}
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying]);
+
+  // helpers for navigation
   const nextStory = useCallback(() => {
+    clearTimers();
+    setProgress(0);
     if (current < stories.length - 1) {
-      setCurrent((prev) => prev + 1);
+      setCurrent((c) => c + 1);
     } else if (hasNextStorySet && onNextStorySet) {
       onNextStorySet();
     }
-  }, [current, stories.length, hasNextStorySet, onNextStorySet]);
+  }, [current, stories.length, hasNextStorySet, onNextStorySet, clearTimers]);
 
-  // Navigate to previous story
   const prevStory = useCallback(() => {
+    clearTimers();
+    setProgress(0);
     if (current > 0) {
-      setCurrent((prev) => prev - 1);
+      setCurrent((c) => c - 1);
     } else if (hasPrevStorySet && onPrevStorySet) {
       onPrevStorySet();
     }
-  }, [current, hasPrevStorySet, onPrevStorySet]);
+  }, [current, hasPrevStorySet, onPrevStorySet, clearTimers]);
 
-  const togglePlayPause = useCallback(() => {
-    setIsPlaying((prev) => !prev);
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
+  const togglePlayPause = useCallback((e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsPlaying((p) => !p);
+  }, []);
+
+  const toggleMute = useCallback((e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsMuted((m) => {
+      const next = !m;
+      if (videoRef.current) videoRef.current.muted = next;
+      return next;
+    });
+  }, []);
+
+  // keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prevStory();
+      if (e.key === "ArrowRight") nextStory();
+      if (e.key === " ") {
+        e.preventDefault();
+        togglePlayPause();
       }
-    }
-  }, [isPlaying]);
+      if (e.key === "m") toggleMute();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [prevStory, nextStory, togglePlayPause, toggleMute]);
 
-  const toggleMute = useCallback(() => {
-    setIsMuted((prev) => !prev);
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-    }
-  }, [isMuted]);
-
-  // Handle touch events for navigation
+  // touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStartRef.current - touchEnd;
-
+    const end = e.changedTouches[0].clientX;
+    const diff = touchStartRef.current - end;
     if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        nextStory();
-      } else {
-        prevStory();
-      }
+      if (diff > 0) nextStory();
+      else prevStory();
     }
   };
 
   const handleScreenClick = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const width = rect.width;
-
-    if (x < width / 2) {
-      prevStory();
-    } else {
-      nextStory();
-    }
+    if (x < rect.width / 2) prevStory();
+    else nextStory();
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "ArrowLeft":
-          prevStory();
-          break;
-        case "ArrowRight":
-          nextStory();
-          break;
-        case " ":
-          e.preventDefault();
-          togglePlayPause();
-          break;
-        case "m":
-          toggleMute();
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [prevStory, nextStory, togglePlayPause, toggleMute]);
-
-  // Reset and start timer when story changes
-  useEffect(() => {
-    resetStory();
-  }, [current, resetStory]);
-
-  // Start timer when playing state changes
-  useEffect(() => {
-    if (isPlaying) {
-      startStoryTimer();
-    } else {
-      clearTimers();
-    }
-
-    return () => clearTimers();
-  }, [isPlaying, startStoryTimer, clearTimers]);
-
-  // Handle video events
-  const handleVideoLoad = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-      if (isPlaying) {
-        videoRef.current.play();
-      }
+  // when video metadata loads, start if we are on that story and playing
+  const handleVideoLoadedMetadata = () => {
+    // only start timer if the loaded video is the current story and is playing
+    if (story?.type === "VIDEO" && isPlaying) {
+      // small delay to allow video.duration to be set
+      setTimeout(() => startStoryTimer(), 20);
     }
   };
 
@@ -257,11 +268,13 @@ const StoriesPlayer = ({
 
         {story.type === "VIDEO" && (
           <video
-            ref={videoRef}
+            ref={(el) => {
+              videoRef.current = el;
+            }}
             src={story.mediaUrl}
             className="w-full h-full object-cover"
             muted={isMuted}
-            onLoadedData={handleVideoLoad}
+            onLoadedMetadata={handleVideoLoadedMetadata}
             onEnded={nextStory}
             playsInline
           />
@@ -298,16 +311,11 @@ const StoriesPlayer = ({
             className="flex-1 h-1 rounded bg-white/30 overflow-hidden"
           >
             <div
-              className={`h-full bg-white transition-all duration-100 ${
-                i === current
-                  ? "transition-none"
-                  : i < current
-                  ? "w-full"
-                  : "w-0"
-              }`}
+              className="h-full bg-white transition-all"
               style={{
                 width:
                   i === current ? `${progress}%` : i < current ? "100%" : "0%",
+                transitionDuration: i === current ? "50ms" : "200ms",
               }}
             />
           </div>

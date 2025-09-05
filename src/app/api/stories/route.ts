@@ -24,39 +24,51 @@ export async function POST(req: NextRequest) {
       storyIdsToConnect = [],
     } = body;
 
-    const tagConnectOrCreate = tagNames.map((name: string) => ({
+    const tagConnectOrCreate = (tagNames || []).map((name: string) => ({
       where: { name },
       create: { name },
     }));
 
     const slug = generateSlug(title);
 
-    const data = {
-      title,
-      slug,
-      thumbnail,
-      isPublic,
-      authorId: Number(authorId),
-      categories: {
-        connect: categoryIds.map((id: number) => ({ id })),
-      },
-      tags: {
-        connectOrCreate: tagConnectOrCreate,
-      },
-      stories: {
-        create: storiesToCreate.map((s: any) => ({
-          mediaUrl: s.mediaUrl,
-          type: s.type,
-          caption: s.caption,
-          duration: s.duration,
-        })),
-        connect: storyIdsToConnect.map((id: number) => ({ id })),
-      },
-    };
+    const storyCreates = (storiesToCreate || [])
+      .filter((s: any) => !s.id)
+      .map((s: any) => ({
+        storySetId: undefined,
+        mediaUrl: s.mediaUrl,
+        type: s.type,
+        caption: s.caption,
+        duration: s.duration,
+      }));
 
-    const storySet = await prisma.storySet.create({ data });
+    const storySet = await prisma.storySet.create({
+      data: {
+        title,
+        slug,
+        thumbnail,
+        isPublic,
+        authorId: Number(authorId),
+        categories: {
+          connect: (categoryIds || []).map((id: number) => ({ id })),
+        },
+        tags: {
+          connectOrCreate: tagConnectOrCreate,
+        },
+        stories: {
+          create: (storiesToCreate || [])
+            .filter((s: any) => !s.id)
+            .map((s: any) => ({
+              mediaUrl: s.mediaUrl,
+              type: s.type,
+              caption: s.caption,
+              duration: s.duration,
+            })),
+          connect: (storyIdsToConnect || []).map((id: number) => ({ id })),
+        },
+      },
+    });
 
-    return NextResponse.json(storySet, { status: 201 });
+    return NextResponse.json({ id: storySet.id }, { status: 201 });
   } catch (err) {
     console.error("Error creating story set:", err);
     return NextResponse.json(

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ category }, { status: 201 });
+    return NextResponse.json({ id: category.id }, { status: 201 });
   } catch (error) {
     console.error("Error creating category:", error);
     return NextResponse.json(

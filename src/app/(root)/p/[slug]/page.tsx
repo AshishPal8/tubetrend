@@ -1,7 +1,9 @@
 import BlogComment from "@/components/blog/blog-comment";
 import LikeCommentShare from "@/components/blog/like-comment-share";
+import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prismadb";
 import { Metadata } from "next";
+import { getServerSession } from "next-auth";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import React from "react";
@@ -64,21 +66,48 @@ const BlogPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
 
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ? Number(session.user.id) : null;
+
   const blog = await prisma.blog.findUnique({
     where: { slug },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      thumbnail: true,
+      metaDescription: true,
+      _count: {
+        select: { comments: true, likes: true },
+      },
+      likes: userId
+        ? {
+            where: { userId },
+            select: { id: true },
+            take: 1,
+          }
+        : undefined,
+    },
   });
 
   if (!blog) return {};
 
-  const commentCount = await prisma.comment.count({
-    where: { blogId: blog.id },
-  });
+  const commentCount = blog._count?.comments ?? 0;
+  const likeCount = blog._count?.likes ?? 0;
+  const initiallyLiked = Array.isArray(blog.likes)
+    ? blog.likes.length > 0
+    : false;
 
   return (
     <div className="max-w-4xl mx-auto mt-20 mb-10">
       <h1 className="text-5xl font-black">{blog.title}</h1>
       <div>
-        <LikeCommentShare id={blog.id} commentCount={commentCount} />
+        <LikeCommentShare
+          id={blog.id}
+          commentCount={commentCount}
+          initialLiked={initiallyLiked}
+          initialLikeCount={likeCount}
+        />
       </div>
       <div className="w-full flex justify-center mt-6">
         <Image
