@@ -111,8 +111,10 @@ const BlogPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
   const likeCount = blog._count?.likes ?? 0;
 
   return (
-    <div className="max-w-4xl mx-auto mt-20 mb-10">
-      <h1 className="text-5xl font-black">{blog.title}</h1>
+    <div className="max-w-4xl mx-auto mt-20 mb-10 px-10">
+      <h1 className="text-3xl md:text-5xl font-semibold md:font-black">
+        {blog.title}
+      </h1>
       <div>
         <LikeCommentShare
           id={blog.id}
@@ -121,17 +123,19 @@ const BlogPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
           slug={slug}
         />
       </div>
-      <div className="w-full flex justify-center mt-6">
-        <Image
-          src={blog.thumbnail || "/assets/placeholder.jpg"}
-          alt={blog.title}
-          width={700}
-          height={400}
-          className="w-full rounded-3xl"
-          priority
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Wj2nkdUTixwf8/k="
-        />
+      <div className="w-full mt-6">
+        <div className="relative w-full aspect-video rounded-3xl overflow-hidden bg-gray-100 shadow-lg">
+          <Image
+            src={blog.thumbnail || "/assets/placeholder.jpg"}
+            alt={blog.title}
+            fill
+            className="object-cover transition-transform duration-300 hover:scale-105"
+            priority
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Wj2nkdUTixwf8/k="
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+          />
+        </div>
       </div>
       <div
         className="prose max-w-none mt-5"
