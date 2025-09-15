@@ -34,7 +34,7 @@ const LikeCommentShare = ({
   useEffect(() => {
     const loadRealTimeData = async () => {
       try {
-        const response = await axios.get(`/api/blogs/${id}/like`);
+        const response = await axios.get(`/api/blogs/${id}/stats`);
         const {
           likeCount: currentLikes,
           commentCount: currentComments,

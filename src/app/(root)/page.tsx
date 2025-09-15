@@ -15,8 +15,8 @@ export default async function Home() {
   }
 
   return (
-    <div className="w-full h-screen mt-16 max-w-7xl mx-auto">
-      <div className="w-full flex flex-col md:flex-row gap-4 px-2 md:px-0">
+    <div className="w-full h-screen mt-16 max-w-7xl mx-auto px-2 md:px-0">
+      <div className="w-full flex flex-col md:flex-row gap-4">
         <Hero blogs={featuredBlogs} />
         <Trending />
       </div>

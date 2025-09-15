@@ -55,7 +55,7 @@ const StoriesSlider = ({ storySet }: { storySet: IStoryset[] }) => {
           <div
             key={stories.id}
             data-story
-            className="border-4 border-blue-600 p-1 w-fit rounded-full flex-shrink-0"
+            className="border-4 border-blue-600 p-1 w-24 md:w-32 h-24 md:h-32 rounded-full flex-shrink-0 overflow-hidden"
           >
             <Link href={`/stories/${stories.slug}`}>
               <Image
@@ -63,7 +63,7 @@ const StoriesSlider = ({ storySet }: { storySet: IStoryset[] }) => {
                 alt={stories.title}
                 width={128}
                 height={128}
-                className="w-32 h-32 rounded-full aspect-square object-cover"
+                className="w-20 md:w-28 h-20 md:h-28 rounded-full aspect-square object-cover"
               />
             </Link>
           </div>
