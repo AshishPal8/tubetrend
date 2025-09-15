@@ -13,7 +13,7 @@ export async function getFeatureBlgs() {
       readTime: true,
       content: true,
       createdAt: true,
-      categories: true,
+      categories: { select: { id: true, name: true } },
     },
     orderBy: {
       createdAt: "desc",
