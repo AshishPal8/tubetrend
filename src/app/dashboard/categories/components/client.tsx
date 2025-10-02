@@ -1,27 +1,52 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
-import { DataTable } from "@/components/ui/data-table";
 import { CategoryColumn, columns } from "./columns";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import DataTable from "@/components/ui/table-comp";
+import Pagination from "@/components/ui/pagination";
+import axios from "axios";
+import CategoryFilters from "./category-filters";
 
-interface CategoryClientProps {
+interface ApiResponse {
   data: CategoryColumn[];
+  meta: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    pageSize: number;
+  };
 }
-
-export const CategoryClient: React.FC<CategoryClientProps> = ({ data }) => {
+export const CategoryClient = () => {
+  const searchParams = useSearchParams();
   const router = useRouter();
+
+  const [data, setData] = useState<CategoryColumn[]>([]);
+  const [meta, setMeta] = useState<ApiResponse["meta"]>();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const query = searchParams.toString();
+      const url = query ? `/api/categories?${query}` : `/api/categories`;
+
+      const res = await axios.get<ApiResponse>(url);
+      setData(res.data.data);
+      setMeta(res.data.meta);
+    };
+
+    fetchCategories();
+  }, [searchParams]);
 
   return (
     <>
       <div className="flex items-center justify-between">
         <Heading
-          title={`Category (${data.length})`}
+          title={`Category (${meta?.totalCount})`}
           description="Manage categories of blogs"
         />
         <Button onClick={() => router.push(`/dashboard/categories/new`)}>
@@ -30,7 +55,14 @@ export const CategoryClient: React.FC<CategoryClientProps> = ({ data }) => {
         </Button>
       </div>
       <Separator />
-      <DataTable columns={columns} data={data} searchableColumns={["name"]} />
+      <CategoryFilters />
+      <DataTable columns={columns} data={data} />
+      {meta && (
+        <Pagination
+          currentPage={meta.currentPage}
+          totalPages={meta.totalPages}
+        />
+      )}
     </>
   );
 };

@@ -61,3 +61,58 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function GET(req: NextRequest) {
+  try {
+    const url = req.nextUrl;
+
+    const search = url.searchParams.get("search") || "";
+    const page = Number(url.searchParams.get("page") || 1);
+    const pageSize = Number(url.searchParams.get("pageSize") || 10);
+    const sort = url.searchParams.get("sort") || "createdAt";
+    const order = (url.searchParams.get("order") || "desc") as "asc" | "desc";
+
+    const currentPage = Math.max(page, 1);
+    const take = Math.max(pageSize, 1);
+    const skip = (currentPage - 1) * take;
+
+    // filter
+    const where = {
+      isDeleted: false,
+      ...(search && {
+        name: {
+          contains: search,
+          mode: "insensitive" as const,
+        },
+      }),
+    };
+
+    const [totalCount, data] = await Promise.all([
+      prisma.category.count({ where }),
+      prisma.category.findMany({
+        where,
+        orderBy: { [sort]: order },
+        skip,
+        take,
+      }),
+    ]);
+
+    const totalPages = Math.max(Math.ceil(totalCount / take), 1);
+
+    return NextResponse.json({
+      data,
+      meta: {
+        currentPage,
+        totalPages,
+        totalCount,
+        pageSize: take,
+      },
+    });
+  } catch (error) {
+    console.error("API Error:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
